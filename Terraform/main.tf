@@ -1,14 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 3.27"
-    }
-  }
-
-  required_version = ">= 0.14.9"
-}
-
 provider "aws" {
   profile = "default"
   region  = "us-east-1"
@@ -21,8 +10,7 @@ resource "aws_key_pair" "Key-Pair" {
   key_name = "MyKey"
 
   # Adding the SSH authorized key !
-  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDLeBTi0KxMNtIm5JMzrYTld2gpcsfd6dqjryFQyyjkhhM6Y445lEZYcPL3oSSlc9Icd6hPmfOcAcgJ5bkYWlCFgwMCcFqzp6WtQjxKDdH4LLMypoQbQ5HPoNU+QiDSsrsUJp+uu9szB0py2SBEi7nw7hDKHGfjQfhvq4Ihdr3hJd/XymTMY+5A9uyHperhJgLzUAn85DV6M1EVODIxHIndwRUxegPhPQ0nX7ieT8KQqJwfTrwaoukOzctm1zt9y02lyMztderzyf6vpU9M4Oc1rWemt7qk2yYXvW8wRV0Y9KU0Pe1Z2ZMc9s6rFeoY/tg1uvJT9i0uKCzVb8FKjXxSbPw+LY4cUhWLR6Jgq7pixSO7GkAtASjAgf8KSwqOQ0Pku3n4/LseCeCcbwUB1HYDOvBf7notwoLdrWbuUdXrmypn6C9PLkZ1JEe8whhmT/x8t2l5q0taR/rLe3xD/MjSWyrNrAkADWpM5e4cKaOkFx/yMX1QkUS3zaE8SH6ojCU= Madhu Kiran@DESKTOP-I148625"
-
+  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCw1Zw37C+H3dFuBWQhMk/JbMrjPW1sInCB2xwhrEw9wNZYpVNgHfmZ5YNhS8tE6jWxyVFOHR0d/P5CBgS5RB9vAs2DZYrdXw8lskvSmkT3B6p3cEmo42lpR6IEFYW2c53Az56pNQM2/9SqFXoPlRgMfu1HJL2yjJS4xiZJSRvjOh+vrW5RJgk1Y+RTl6FVXKv45wjLtFQh5eo7y/nh6F1f00vWyhyOQnpUJRN2V6rayj36qPDoP2EKLiGcmkMZkHEv2sCg4vlCa2nYNHYoMM26T+8wWBia/ZUmFVn+FFwTXRe20O1BlT1M4RWJTf+dCalZlfYBT7ix2CUp9zSnNBIR5PIUxw0QsEfC5z/41wWV7/wmUp2xMinYVq0H+XhZIR+E+9vwAMJD3YeWrccvddutQEp4xw3RedHhMkWiGojS3vAhb24fjtpg0w8HGknrQvT5QOo/RUE94qapES0eX4FyvLpOuID6ARt6iN+/jRUh5EvFvrUtDaotyjhr0m0bXRs= DELL@DESKTOP-TGO7D38"
 }
 
 
@@ -224,9 +212,9 @@ resource "aws_instance" "jenkins" {
     aws_security_group.JENKINS-SG
   ]
 
-  ami           = "ami-0b5eea76982371e91" 
+  ami           = "ami-00beae93a2d981137" 
   # amazoon-linux
-  instance_type = "t2.micro"
+  instance_type = "t2.medium"
   subnet_id     = aws_subnet.subnet1.id
 
   # Keyname and security group are obtained from the reference of their instances created above!
@@ -247,21 +235,15 @@ resource "aws_instance" "jenkins" {
     inline = [
       "sudo amazon-linux-extras install -y epel",
       "sudo yum install wget ",
- #    "sudo yum update -y",
       "sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo",
- #    "sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key",
       "sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key",	    
       "sudo yum update -y",
       "sudo amazon-linux-extras install java-openjdk11 -y",	  
       "sudo yum install jenkins -y",
- 	    "sudo systemctl start jenkins",
+      "sudo systemctl start jenkins",
       "sudo systemctl enable jenkins",
-	    "sudo yum install git maven -y",
-#     "sudo yum install git python3 python3-pip maven -y",
-#     "python3 -m pip install --upgrade pip",
-#      "sudo systemctl daemon-reload",
+      "sudo yum install git maven -y",
       "sudo yum install ansible -y",
-#      "yes | sudo pip3 install ansible",
       "sudo amazon-linux-extras install docker -y",
       "sudo service docker start",
       "sudo usermod -aG docker $USER",
@@ -269,6 +251,8 @@ resource "aws_instance" "jenkins" {
       "sudo systemctl enable docker.service",
       "sudo systemctl enable containerd.service",
       "sudo service docker restart",
+      "docker -itd --name sonar -p 9000:9000 sonarqube" 
+      "rpm -ivh https://github.com/aquasecurity/trivy/releases/download/v0.18.3/trivy_0.18.3_Linux-64bit.rpm"
     ]
   }
   tags = {
@@ -279,13 +263,13 @@ resource "aws_instance" "jenkins" {
 
 # Creating an AWS instance for the MyApp! It should be launched in the private subnet!
 resource "aws_instance" "MyApp" {
-  depends_on = [
+    depends_on = [
     aws_instance.jenkins,
   ]
 
   # i.e. MyApp Installed!
-  ami           = "ami-0b5eea76982371e91"
-  instance_type = "t2.micro"
+  ami           = "ami-00beae93a2d981137"
+  instance_type = "t2.medium"
   subnet_id     = aws_subnet.subnet1.id
 
   # Keyname and security group are obtained from the reference of their instances created above!
@@ -294,6 +278,7 @@ resource "aws_instance" "MyApp" {
 
   # Attaching 2 security groups here, 1 for the MyApp Database access by the Web-servers,
   vpc_security_group_ids = [aws_security_group.MYAPP-SG.id]
+
 
   tags = {
     Name = "MyApp_From_Terraform"
